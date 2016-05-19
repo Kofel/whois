@@ -17,6 +17,9 @@ class WhoisServer
 
     private $tld;
 
+    /** @var int */
+    private $timeout = 5;
+
     /**
      * WhoisServer constructor.
      * @param $host
@@ -50,6 +53,7 @@ class WhoisServer
     protected function queryHost($host, $sld)
     {
         $socket = fsockopen($host, self::WHOIS_PORT);
+        socket_set_timeout($socket, $this->timeout);
         if (false === $socket) {
             throw new WhoisServerConnectionException(sprintf(
                 'Cannot establish connection to "%s".',
@@ -72,5 +76,21 @@ class WhoisServer
         $buffer = htmlspecialchars($buffer, ENT_COMPAT, "UTF-8", true);
 
         return $buffer;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTimeout()
+    {
+        return $this->timeout;
+    }
+
+    /**
+     * @param int $timeout
+     */
+    public function setTimeout($timeout)
+    {
+        $this->timeout = $timeout;
     }
 }
