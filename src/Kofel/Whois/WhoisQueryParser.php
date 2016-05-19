@@ -20,10 +20,11 @@ class WhoisQueryParser
         $this->availableMatcher = $availableMatcher;
     }
 
-    public function parse($query)
+    /** @return WhoisQuery */
+    public function parse($sld, $query)
     {
         $available = (false !== strpos($query, $this->availableMatcher));
         
-        return new WhoisQuery($query, $available);
+        return new WhoisQuery($sld, $query, $available);
     }
 }

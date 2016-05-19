@@ -43,6 +43,7 @@ class JsonWhoisServerFactory
         return new WhoisServer($host, $tld);
     }
 
+    /** @return WhoisQueryParser */
     public function getQueryParser($sld)
     {
         $tld = $this->findTld($sld);

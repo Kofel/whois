@@ -10,6 +10,9 @@ namespace Kofel\Whois;
 class WhoisQuery
 {
     /** @var string */
+    private $sld;
+
+    /** @var string */
     private $query;
 
     /** @var bool */
@@ -17,12 +20,38 @@ class WhoisQuery
 
     /**
      * WhoisQuery constructor.
+     * @param string $sld
      * @param string $query
      * @param bool $available
      */
-    public function __construct($query, $available)
+    public function __construct($sld, $query, $available)
     {
+        $this->sld = $sld;
         $this->query = $query;
         $this->available = $available;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSld()
+    {
+        return $this->sld;
+    }
+
+    /**
+     * @return string
+     */
+    public function getQuery()
+    {
+        return $this->query;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAvailable()
+    {
+        return $this->available;
     }
 }
