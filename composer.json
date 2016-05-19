@@ -1,6 +1,5 @@
 {
     "name": "kofel/whois",
-    "version": "",
     "description": "PHP Whois client",
     "type": "library",
     "require": {
