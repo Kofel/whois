@@ -1,7 +1,7 @@
 <?php
 /**
- * Date: 17.05.2016
- * Time: 12:12
+ * Date: 10.06.2016
+ * Time: 09:47
  */
 
 namespace Kofel\Whois;
@@ -9,49 +9,42 @@ namespace Kofel\Whois;
 
 class WhoisQuery
 {
-    /** @var string */
-    private $sld;
+    /** @var WhoisServerFactory */
+    private $serverFactory;
 
-    /** @var string */
-    private $query;
-
-    /** @var bool */
-    private $available;
+    /** @var int */
+    private $timeout = 2;
 
     /**
      * WhoisQuery constructor.
-     * @param string $sld
-     * @param string $query
-     * @param bool $available
+     * @param WhoisServerFactory $serverFactory
      */
-    public function __construct($sld, $query, $available)
+    public function __construct(WhoisServerFactory $serverFactory)
     {
-        $this->sld = $sld;
-        $this->query = $query;
-        $this->available = $available;
+        $this->serverFactory = $serverFactory;
     }
 
-    /**
-     * @return string
-     */
-    public function getSld()
+    public function query($sld): WhoisResult
     {
-        return $this->sld;
+        $server = $this->serverFactory->getWhoisServer($sld);
+        $resultParser = $this->serverFactory->getResultParser($sld);
+        $result = $server->query($sld, $this->timeout);
+        return $resultParser->parse($sld, $result);
     }
 
-    /**
-     * @return string
-     */
-    public function getQuery()
+    public function getServerFactory(): WhoisServerFactory
     {
-        return $this->query;
+        return $this->serverFactory;
     }
 
-    /**
-     * @return boolean
-     */
-    public function isAvailable()
+    public function getTimeout(): int
     {
-        return $this->available;
+        return $this->timeout;
+    }
+
+    public function setTimeout(int $timeout): self
+    {
+        $this->timeout = $timeout;
+        return $this;
     }
 }

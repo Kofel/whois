@@ -13,47 +13,28 @@ class WhoisServer
 {
     const WHOIS_PORT = 43;
 
-    private $host;
-
-    private $tld;
-
-    /** @var int */
-    private $timeout = 5;
+    /** @var string */
+    protected $host;
 
     /**
      * WhoisServer constructor.
      * @param $host
-     * @param $tld
      */
-    public function __construct($host, $tld)
+    public function __construct($host)
     {
         $this->host = $host;
-        $this->tld = $tld;
     }
 
-    /** @throws WhoisServerConnectionException @return string */
-    public function query($sld)
+    /** @throws WhoisServerConnectionException */
+    public function query($sld, $timeout = 2): string
     {
-        if (in_array($this->tld, ['com', 'net'])) {
-            $serversQuery = $this->queryHost($this->host, '=' . $sld);
-
-            $match = [];
-            if (!preg_match('/Whois Server: ([^\\s]+)/', $serversQuery, $match)) {
-                return $serversQuery;
-            }
-
-            $host = $match[1];
-            return $this->queryHost($host, $sld);
-        }
-        else {
-            return $this->queryHost($this->host, $sld);
-        }
+        return $this->queryHost($this->host, $sld, $timeout);
     }
 
-    protected function queryHost($host, $sld)
+    /** @throws WhoisServerConnectionException */
+    protected function queryHost($host, $sld, $timeout = 2): string
     {
-        $socket = fsockopen($host, self::WHOIS_PORT);
-        socket_set_timeout($socket, $this->timeout);
+        $socket = @fsockopen($host, self::WHOIS_PORT, $errno, $errstr, $timeout);
         if (false === $socket) {
             throw new WhoisServerConnectionException(sprintf(
                 'Cannot establish connection to "%s".',
@@ -66,7 +47,16 @@ class WhoisServer
 
         $buffer = '';
         while(!feof($socket)) {
-            $buffer .= fgets($socket, 128);
+            $buffer .= fread($socket, 128);
+        }
+
+        $info = stream_get_meta_data($socket);
+
+        if ($info['timed_out']) {
+            throw new WhoisServerConnectionException(sprintf(
+                'Connection to "%s" timed out.',
+                $this->host
+            ));
         }
 
         fclose($socket);
@@ -76,21 +66,5 @@ class WhoisServer
         $buffer = htmlspecialchars($buffer, ENT_COMPAT, "UTF-8", true);
 
         return $buffer;
-    }
-
-    /**
-     * @return int
-     */
-    public function getTimeout()
-    {
-        return $this->timeout;
-    }
-
-    /**
-     * @param int $timeout
-     */
-    public function setTimeout($timeout)
-    {
-        $this->timeout = $timeout;
     }
 }

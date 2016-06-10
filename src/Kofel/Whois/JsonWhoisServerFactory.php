@@ -10,7 +10,7 @@ namespace Kofel\Whois;
 use Kofel\Whois\Exception\InvalidJsonFileException;
 use Kofel\Whois\Exception\UnsupportedDomainException;
 
-class JsonWhoisServerFactory
+class JsonWhoisServerFactory implements WhoisServerFactory
 {
     const JSON_PATH = __DIR__ . '/Resources/whois.servers.json';
 
@@ -27,35 +27,32 @@ class JsonWhoisServerFactory
         $this->loadServerList();
     }
 
-    /** @throws InvalidJsonFileException @throws UnsupportedDomainException */
-    public function getWhoisServer($sld)
+    /**
+     * @throws InvalidJsonFileException
+     * @throws UnsupportedDomainException
+     */
+    public function getWhoisServer($sld): WhoisServer
     {
         $tld = $this->findTld($sld);
         $definition = $this->getTldDefinition($tld);
 
-        $host = $definition[0];
-        if (preg_match('/^https?:\/\//i', $host)) {
-            throw new UnsupportedDomainException(sprintf(
-                'https whois server is currently unsupported.'
-            ));
-        }
-
-        return new WhoisServer($host, $tld);
+        return $this->createWhoisServer($definition);
     }
 
-    /** @return WhoisQueryParser */
-    public function getQueryParser($sld)
+    /**
+     * @throws InvalidJsonFileException
+     * @throws UnsupportedDomainException
+     */
+    public function getResultParser($sld): WhoisResultParser
     {
         $tld = $this->findTld($sld);
         $definition = $this->getTldDefinition($tld);
 
-        $host = $definition[0];
-
-        return new WhoisQueryParser($definition[1]);
+        return new WhoisResultParser($definition['tokens']);
     }
 
-    /** @throws UnsupportedDomainException @return string */
-    protected function findTld($sld)
+    /** @throws UnsupportedDomainException */
+    protected function findTld($sld): string
     {
         $chunks = explode('.', strtolower($sld));
         $count = count($chunks);
@@ -75,12 +72,12 @@ class JsonWhoisServerFactory
     }
 
     /** @throws InvalidJsonFileException */
-    protected function getTldDefinition($tld)
+    protected function getTldDefinition($tld): array
     {
         if (
             !isset($this->serverList[$tld]) ||
             !is_array($this->serverList[$tld]) ||
-            2 !== count($this->serverList[$tld])
+            !array_key_exists('host', $this->serverList[$tld])
         ) {
             throw new InvalidJsonFileException(sprintf(
                 'Invalid server definition for "%s" tld.',
@@ -113,5 +110,25 @@ class JsonWhoisServerFactory
         }
 
         $this->serverList = $content;
+    }
+
+    /**
+     * @param $tld string
+     * @param $definition array
+     * @return WhoisServer
+     * @throws UnsupportedDomainException
+     */
+    protected function createWhoisServer($definition): WhoisServer
+    {
+        $host = $definition['host'];
+
+        switch ($definition['protocol']) {
+            case 'whois':
+                return new WhoisServer($host);
+            case 'proxy-whois':
+                return new ProxyWhoisServer($host);
+            case 'http':
+                return new HttpWhoisServer($host);
+        }
     }
 }

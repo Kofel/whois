@@ -3,6 +3,7 @@
     "description": "PHP Whois client",
     "type": "library",
     "require": {
+        "php": "^7.0",
         "ext-curl": "*"
     },
     "require-dev": {
